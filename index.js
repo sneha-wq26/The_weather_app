@@ -1,18 +1,21 @@
 const userTab = document.querySelector("[data-userWeather]");
 const searchTab = document.querySelector("[data-searchWeather]");
 const userContainer = document.querySelector(".weather-container");
-
 const grantAccessContainer = document.querySelector(".grant-location-container");
 const searchForm = document.querySelector("[data-searchForm]");
 const loadingScreen = document.querySelector(".loading-container");
 const userInfoContainer = document.querySelector(".user-info-container");
 
-//initially variables
-let oldTab = userTab;
-const API_KEY = "d1845658f92b31c64bd94f06f7188c9c";
-oldTab.classList.add("current-tab");
-getfromSessionStorage();
+const grantAccessButton = document.querySelector("[data-grantAccess]");
+const searchInput = document.querySelector("[data-searchInput]");
 
+let oldTab = userTab;
+const API_KEY = "YOUR_API_KEY_HERE";  // ← Replace this
+
+oldTab.classList.add("current-tab");
+getFromSessionStorage();
+
+// Switch Tab Function
 function switchTab(newTab) {
     if (newTab !== oldTab) {
         oldTab.classList.remove("current-tab");
@@ -26,7 +29,7 @@ function switchTab(newTab) {
         } else {
             searchForm.classList.remove("active");
             userInfoContainer.classList.remove("active");
-            getfromSessionStorage();
+            getFromSessionStorage();
         }
     }
 }
@@ -34,7 +37,8 @@ function switchTab(newTab) {
 userTab.addEventListener("click", () => switchTab(userTab));
 searchTab.addEventListener("click", () => switchTab(searchTab));
 
-function getfromSessionStorage() {
+// Get location from sessionStorage
+function getFromSessionStorage() {
     const localCoordinates = sessionStorage.getItem("user-coordinates");
     if (!localCoordinates) {
         grantAccessContainer.classList.add("active");
@@ -44,26 +48,28 @@ function getfromSessionStorage() {
     }
 }
 
+// Fetch weather for user location
 async function fetchUserWeatherInfo(coordinates) {
     const { lat, lon } = coordinates;
+
     grantAccessContainer.classList.remove("active");
     loadingScreen.classList.add("active");
 
     try {
-        const response = await fetch(
+        const res = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
         );
-        const data = await response.json();
-
+        const data = await res.json();
         loadingScreen.classList.remove("active");
         userInfoContainer.classList.add("active");
         renderWeatherInfo(data);
     } catch (err) {
         loadingScreen.classList.remove("active");
-        alert("Failed to fetch weather info");
+        alert("Failed to fetch weather data.");
     }
 }
 
+// Render data
 function renderWeatherInfo(weatherInfo) {
     const cityName = document.querySelector("[data-cityName]");
     const countryIcon = document.querySelector("[data-countryIcon]");
@@ -84,34 +90,33 @@ function renderWeatherInfo(weatherInfo) {
     cloudiness.innerText = `${weatherInfo?.clouds?.all}%`;
 }
 
+// Get user's location
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     } else {
-        alert("Geolocation is not supported by your browser");
+        alert("Geolocation not supported.");
     }
 }
 
+// Store and fetch location-based weather
 function showPosition(position) {
     const userCoordinates = {
         lat: position.coords.latitude,
         lon: position.coords.longitude,
     };
-
     sessionStorage.setItem("user-coordinates", JSON.stringify(userCoordinates));
     fetchUserWeatherInfo(userCoordinates);
 }
 
-const grantAccessButton = document.querySelector("[data-grantAccess]");
 grantAccessButton.addEventListener("click", getLocation);
 
-const searchInput = document.querySelector("[data-searchInput]");
-
+// Search city weather
 searchForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    let cityName = searchInput.value;
-    if (cityName === "") return;
-    fetchSearchWeatherInfo(cityName);
+    const city = searchInput.value.trim();
+    if (city === "") return;
+    fetchSearchWeatherInfo(city);
 });
 
 async function fetchSearchWeatherInfo(city) {
@@ -120,15 +125,15 @@ async function fetchSearchWeatherInfo(city) {
     grantAccessContainer.classList.remove("active");
 
     try {
-        const response = await fetch(
+        const res = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
         );
-        const data = await response.json();
+        const data = await res.json();
         loadingScreen.classList.remove("active");
         userInfoContainer.classList.add("active");
         renderWeatherInfo(data);
     } catch (err) {
         loadingScreen.classList.remove("active");
-        alert("City not found or API error");
+        alert("City not found.");
     }
 }
